@@ -4,6 +4,29 @@
   
   
   <entry>
+    <title>Sora原理？OpenAI Sora原理解读</title>
+    <link href="/what_is_sora.html"/>
+    <url>/what_is_sora.html</url>
+    
+    <content type="html"><![CDATA[<p>2月16日，Openai在没有预热的情况下丢出一枚“核弹”，那就是Sora。这是一个文生视频的模型，有人可能会问不是还有pika这些文生视频的工具吗。Sora跟其他那些根本就不在一个次元上了。</p><p>Sora 的强大之处在于能够根据文本描述，生成长达 60 秒连贯流畅的的视频，而其他的仅仅只能生成几秒的视频。</p><p>看下面这段官方展示的视频，这段视频用无人机的视觉来展现东京街头的一堆情侣，旁边还有美丽的樱花。虽然这段视频前面的一小节不太合理，但是已经做的非常好了。因为其他工具做出来的视频还只是单镜头，而sora已经做到了多镜头的无缝衔接，可谓是遥遥领先！</p><iframe src="https://cdn.openai.com/sora/videos/tokyo-in-the-snow.mp4" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" width="100%"  height="580" quality="high" > </iframe><h2 id="sora是如何做到的？"><a href="#sora是如何做到的？" class="headerlink" title="sora是如何做到的？"></a>sora是如何做到的？</h2><p>OpenAI团队探索了在视频数据上大规模训练生成模型。具体地说，就是时间、分辨率和纵横比的视频和图像上进行了基于文本的扩散模型。利用了一种 transformer 架构，这种架构在视频和图像潜在代码的时空补丁上运行。Sora就在这个基础上诞生的。</p><p>首先先聊一下AI生图的原理是什么？先将图片分割成很多小块，然后给他们打上标签，然后对图片进行加噪点，10%的噪点、20%的噪点，直到加满噪点，然后将这些图片丢去训练，去预测原始的“干净”图。</p><p>而视频也是类似，只是视频多了一个时间的维度，需要对视频进行降维处理然后再进行训练。</p><h3 id="数据处理"><a href="#数据处理" class="headerlink" title="数据处理"></a>数据处理</h3><p>OpenAI团队受到了大型语言模型的启发，LLM模型使用了特定的标记方法来统一各种不同的文本模式，例如代码、数学语言、以及各种的自然语言。Sora则使用<em>patches</em>，这是一种既可拓展又高效的方法，适用于在不同类型的视频和图片上训练生成模型。</p><p><img src="https://static.ywing.cn/image-20240220213646306.png" alt="image-20240220213646306"></p><p>在高维度上，先将视频压缩到低维度的latent空间，从而将视频转换为时空嵌入然后再分解为<em>patches</em>。</p><h3 id="视频压缩网络"><a href="#视频压缩网络" class="headerlink" title="视频压缩网络"></a>视频压缩网络</h3><p>我们训练了一个网络可以降低视觉数据的维度。简单来说就是传入一段视频，然后输出的内容是在时间和空间是压缩过的潜在表示。Sora在这里接受训练然后生成视频。另外，他们还训练了这个压缩器对应的解码器，可以将生成的内容转换为我们熟悉的视频。</p><p>也就是说Sora生成的也是低维度的数据，需要经过解码器才能得到我们想要的内容。</p><h3 id="时空隐式patches"><a href="#时空隐式patches" class="headerlink" title="时空隐式patches"></a>时空隐式patches</h3><p>当给定一个压缩后的输入视频时，我们会从中提取出一系列的时空包，这些包被用作转换token。这一方案不仅适用于视频，因为视频本质上就是由连续帧构成的，所以图像也可以看作是单帧的视频。通过这种基于包的表示方式，Sora能够跨越不同分辨率、持续时间和纵横比的视频和图像进行训练。在推理阶段，我们只需在适当大小的网格中安排随机初始化的包，就可以控制生成视频的大小和分辨率。</p><h3 id="用于视频生成的缩放转换"><a href="#用于视频生成的缩放转换" class="headerlink" title="用于视频生成的缩放转换"></a>用于视频生成的缩放转换</h3><p>Sora是一个扩散模型，它接受输入的噪声包（以及如文本提示等条件性输入信息），然后被训练去预测原始的“干净”包。重要的是，Sora是一个基于扩散的转换器模型，这种模型已经在多个领域展现了显著的扩展性，包括语言建模、计算机视觉以及图像生成等领域。</p><p><img src="https://static.ywing.cn/image-20240220220145835.png" alt="降噪"></p><h2 id="Sora有什么优势？"><a href="#Sora有什么优势？" class="headerlink" title="Sora有什么优势？"></a>Sora有什么优势？</h2><h3 id="更丰富的持续时间、分辨率与纵横比"><a href="#更丰富的持续时间、分辨率与纵横比" class="headerlink" title="更丰富的持续时间、分辨率与纵横比"></a>更丰富的持续时间、分辨率与纵横比</h3><p>过去，图像和视频生成方法常常需要将视频调整大小、裁剪或修剪至标准尺寸，如4秒、256x256分辨率的视频。但Sora打破了这一常规，它直接在原始大小的数据上进行训练，从而带来了诸多优势。</p><h3 id="更灵活的采样"><a href="#更灵活的采样" class="headerlink" title="更灵活的采样"></a>更灵活的采样</h3><p>Sora 可以对横屏1920x1080p视频、竖屏1080x1920p视频以及介于两者之间的所有视频进行采样。这就意味着Sora可以直接为不同分辨率的设备创建内容。</p><h3 id="改进的取景和构图"><a href="#改进的取景和构图" class="headerlink" title="改进的取景和构图"></a>改进的取景和构图</h3><p>我们的实验结果显示，在视频的原始纵横比上进行训练，能够显著提升构图和框架的质量。为了验证这一点，我们将Sora与一个将所有训练视频裁剪为方形的模型版本进行了比较。结果发现，在正方形裁剪上训练的模型有时会生成仅部分显示主题的视频。而Sora则能呈现出更加完美的帧，充分展现了其在视频生成领域的卓越性能。</p><h3 id="语言理解深化"><a href="#语言理解深化" class="headerlink" title="语言理解深化"></a>语言理解深化</h3><p>Sora借鉴了DALL·E3中的re-captioning技术。首先训练一个高度描述性的字幕器模型，然后使用它为训练集中的所有视频生成文本字幕。不仅如此，Sora还利用了GPT中技术，将简短的提示词转译为更复杂的提示词，使得Sora能够精准的生成用户想要的高质量视频</p><h3 id="将DALL·E图片变成动画"><a href="#将DALL·E图片变成动画" class="headerlink" title="将DALL·E图片变成动画"></a>将DALL·E图片变成动画</h3><p>Sora还能在提供图像和提示作为输入的情况下生成视频。</p><p>下面展示的是基于DALL·E 2和 DALL·E 3的图像。</p><p><img src="https://static.ywing.cn/20240220_223525_856_470.gif" alt="20240220_223525_856_470"></p><h3 id="扩展生成的视频"><a href="#扩展生成的视频" class="headerlink" title="扩展生成的视频"></a>扩展生成的视频</h3><p>Sora 还能够向前或向后扩展视频。三个视频便是从同一生成视频片段出发，逐步向后扩展的示例</p><iframe src="https://cdn.openai.com/tmp/s/extend_1.mp4" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" width="100%"  height="580" quality="high" > </iframe><iframe src="https://cdn.openai.com/tmp/s/extend_2.mp4" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" width="100%"  height="580" quality="high" > </iframe><iframe src="https://cdn.openai.com/tmp/s/extend_3.mp4" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" width="100%"  height="580" quality="high" > </iframe><p>这展示了Sora在时间扩展方面强大的功能。</p><h2 id="Sora的应用场景"><a href="#Sora的应用场景" class="headerlink" title="Sora的应用场景"></a>Sora的应用场景</h2><p>OpenAI Sora作为一种基于文本提示生成视频的人工智能工具，有很广泛的应用场景：</p><ol><li><strong>电影和视频制作</strong>：使用Sora可以快速生成电影或视频的概念预览，帮助导演和制片人在实际拍摄前可视化场景和故事情节，从而降低制作成本以及提高制作效率。</li><li><strong>广告行业</strong>：在创意广告的制作过程中，广告商可以借助Sora快速制作出高质量的广告，增强广告的吸引力。</li><li><strong>游戏开发</strong>：Sora可以用于游戏开发中的视觉效果制作，尤其是在创建游戏预告片或概念艺术方面。</li><li><strong>教育和培训</strong>：在教育行业，Sora可以用于创建教学视频，通过生动的视觉内容来提高学习的互动性和趣味性。</li><li><strong>内容创作和社交媒体</strong>：对于内容创作者和社交媒体影响者来说，Sora提供了一种新颖的方式来创造吸引人的视频内容，增强观众的参与度。</li><li><strong>新闻和纪录片</strong>：新闻机构可以使用Sora来快速制作新闻报道或纪录片中的视觉内容，尤其是在模拟复杂事件或历史场景时。</li><li><strong>艺术和创意探索</strong>：艺术家和创意专业人士可以利用Sora探索新的艺术形式和表达方式，创造独特的视觉艺术作品。</li><li><strong>产品和建筑可视化</strong>：在产品设计和建筑行业，Sora可以用来创建产品原型或建筑项目的视觉呈现，帮助设计师和客户更好地理解和评估设计概念。</li></ol><h2 id="如何使用Sora"><a href="#如何使用Sora" class="headerlink" title="如何使用Sora"></a>如何使用Sora</h2><p>Sora目前<strong>暂未开放</strong>，只提供给部分内测用户使用。后续开放预计也是先在 ChatGPT Plus 会员覆盖。还没有开通ChatGPT Plus会员的可以参考下面这篇文章开通：</p><p><a href="https://www.chatgptzhidao.com/how_to_payment_gpt4.0.html">如何开通Chatgpt Plus</a></p><p>Sora官网入口：<a href="https://openai.com/sora">https://openai.com/sora</a></p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>chatgpt</tag>
+      
+      <tag>chatgpt plus</tag>
+      
+      <tag>sora</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>OpenAI Sora怎么用？ Sora使用方法一览！OpenAI Sora如何使用详细教程和使用指南</title>
     <link href="/sora.html"/>
     <url>/sora.html</url>
